@@ -5,9 +5,13 @@ import io
 import sys
 from pathlib import Path
 
-# Fix encoding cho Windows console (Python 3.9)
-sys.stdout.reconfigure(encoding='utf-8')
-sys.stderr.reconfigure(encoding='utf-8')
+try:
+    # Fix encoding cho Windows console (Chỉ áp dụng ở local)
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except AttributeError:
+    # Trên Vercel/AWS Lambda, sys.stdout không có hàm reconfigure
+    pass
 
 app = Flask(__name__)
 app.json.nan_to_null = True  # NaN -> null trong JSON để không lỗi UI
