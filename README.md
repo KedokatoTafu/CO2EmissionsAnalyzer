@@ -1,65 +1,84 @@
-# Global CO2 Dashboard Project
 # 🌍 Global GHG Emissions Dashboard
 
-Đây là project phân tích và trực quan hóa dữ liệu lượng phát thải CO2 toàn cầu, thỏa mãn các yêu cầu:
-- **Dữ liệu**: CSV được làm sạch bằng Pandas.
-- **API**: Flask RESTful API trả về JSON.
-- **Web Client**: Xây dựng bằng HTML/Tailwind CSS, tích hợp 3 biểu đồ (Chart.js).
-- **Tương tác**: Lọc theo thời gian & quốc gia; tải file CSV & biểu đồ.
-- **Triển khai**: Sẵn sàng deploy thông qua Ngrok/Render.
-Đây là dự án cuối khóa phân tích dữ liệu Khí nhà kính toàn cầu. Hệ thống cho phép trực quan hóa dữ liệu phát thải CO2 và các khí nhà kính từ năm 1990 - 2024, đồng thời cung cấp tính năng "Mô phỏng Kịch bản" (What-if Simulation) để dự báo biến đổi khí hậu.
+## 1. Tổng quan về Data
+- **Nguồn dữ liệu:** Bộ dữ liệu phát thải khí nhà kính toàn cầu (`owid-co2-data.csv`).
+- **Sản phẩm thể hiện:** Dashboard trực quan hóa mức độ phát thải các loại khí (Tổng CO2, Khí Metan, CO2 từ Than đá, Xi măng...) từ năm 1990 đến 2024. Đồng thời cung cấp công cụ "Mô phỏng Kịch bản (What-if)" để dự báo ảnh hưởng của Dân số và GDP tới môi trường.
+- **Vấn đề dữ liệu & Cách xử lý:**
+    - *Dữ liệu thiếu (Missing Values):* Nhiều quốc gia không được ghi nhận số liệu ở một số năm. Đã xử lý bằng Pandas `fillna(0)` để tránh lỗi null khi vẽ biểu đồ.
+    - *Sai lệch định dạng:* Một số cột dạng chuỗi (string) đã được ép kiểu về dạng số (numeric) thông qua `pd.to_numeric()`.
+    - *Lẫn lộn dữ liệu Tổng hợp:* Dữ liệu gốc trộn lẫn số liệu của Quốc gia với số liệu của Châu lục/Toàn thế giới. Đã viết logic lọc dựa vào cột `iso_code` (quốc gia thực sự mới có mã ISO).
 
-## 📂 Cấu trúc thư mục
+## 2. Kiến trúc Sản phẩm
+Sản phẩm được xây dựng theo mô hình **3-Tier Architecture (FE - BE - DB)**.
+
+### Sơ đồ Hệ thống
+```mermaid
+flowchart LR
+    subgraph FE [Frontend - Giao diện]
+        UI[Web Dashboard\n(HTML, JS, Tailwind)]
+        Charts[Biểu đồ\n(Chart.js, Plotly)]
+    end
+
+    subgraph BE [Backend - Xử lý logic]
+        Server[Flask Server\n(api.py)]
+    end
+
+    subgraph DB [Database - Lưu trữ]
+        CSV[(Nguồn dữ liệu\nowid-co2-data.csv)]
+        Pandas[(In-memory DB\nPandas)]
+    end
+
+    CSV -->|Nạp & Làm sạch| Pandas
+    Pandas <-->|Truy vấn| Server
+    UI -- "Gửi HTTP GET" --> Server
+    Server -- "Trả về JSON" --> Charts
+    Charts -.-> UI
 ```
-project1/
-├── api.py                  # Server Flask xử lý API và Logic
-├── co2_data_cleaned.csv    # Dữ liệu đã làm sạch
-├── requirements.txt        # Các thư viện phụ thuộc
-├── .gitignore              # Bỏ qua file khi dùng Git
-└── templates/
-    └── index.html          # Giao diện chính (Tailwind + Chart.js)
-```
-## 🚀 Tính năng nổi bật
-- **Single Page Application (SPA):** Giao diện cực kỳ mượt mà, hỗ trợ Dark / Light Mode.
-- **RESTful Flask API:** Xử lý và lọc dữ liệu bằng thư viện `pandas`.
-- **Trực quan hóa đa dạng:** 5 loại biểu đồ (Plotly World Map, Line Chart, Bar Chart, Pie Chart) bằng `Chart.js` & `Plotly.js`.
-- **Mô phỏng Kịch bản (What-if):** Tự động điều chỉnh các thanh trượt GDP, Dân số, Thay đổi SD đất để dự phóng mức độ phát thải trong tương lai.
-- **Export Data:** Hỗ trợ tải dữ liệu lọc ra file `.csv` và xuất ảnh biểu đồ `.png`.
 
-## 🚀 Hướng dẫn cài đặt và chạy local
-## 🛠️ Cài đặt & Chạy dự án (Local)
+### Chi tiết các cấu phần
+- **Web Client (FE):** Viết bằng ngôn ngữ **HTML, JavaScript**, và sử dụng framework CSS Tailwind.
+- **Server Backend (BE):** Viết bằng **Python** sử dụng framework **Flask**. 
+- **Các API đã thực thi (RESTful - HTTP GET):**
+    1. `/api/countries`: Lấy danh sách tên quốc gia và khoảng thời gian khả dụng để render Menu chọn lọc (Dropdown/Checkbox).
+    2. `/api/stats`: Nhận tham số truy vấn (`countries`, `from`, `to`) và trả về các chỉ số KPI tổng quan (Tổng phát thải, Quốc gia cao nhất).
+    3. `/api/chart/...` (map, line, bar, pie): Các endpoint chuyên biệt dùng Pandas nhóm và gom dữ liệu, trả về JSON chuẩn cho Chart.js và Plotly vẽ biểu đồ.
+    4. `/api/simulation_data`: Trả về dữ liệu đa chiều (GDP, Dân số, Nhiệt độ) để Web Client tính toán kịch bản mô phỏng tương lai.
 
-1. **Cài đặt thư viện**:
-   Mở terminal trong thư mục `project1` và chạy:
-1. **Cài đặt thư viện:**
-   Mở terminal và chạy lệnh sau:
+## 3. Cấu trúc Code
+- `api.py`: File chứa toàn bộ logic Backend (Server), thiết lập các API endpoints và xử lý dữ liệu (Data Pipeline).
+- `templates/index.html`: File Web Client (Frontend), chứa UI và các đoạn mã Javascript gửi HTTP request (fetch) tới Backend.
+
+## 4. Thư viện & Requirements
+Các thư viện Python và version được cài đặt sử dụng trong dự án:
+- `Flask==3.0.3` (Dựng Web Server)
+- `pandas==2.2.1` (Xử lý và làm sạch dữ liệu)
+- `flask-cors==4.0.0` (Xử lý chính sách bảo mật chia sẻ tài nguyên)
+
+## 5. Hướng dẫn Chạy Sản phẩm & Sử dụng
+
+### Hướng dẫn bật Server
+1. Mở Terminal / Command Prompt tại thư mục dự án.
+2. Cài đặt các thư viện cần thiết:
    ```bash
-   pip install -r requirements.txt
-   pip install flask pandas flask-cors
+   pip install Flask pandas flask-cors
    ```
-
-2. **Khởi động server**:
-2. **Khởi động Server:**
+3. Chạy file server Python:
    ```bash
    python api.py
    ```
-   *Console sẽ hiển thị: `Running on http://127.0.0.1:5000`*
+4. Mở trình duyệt web và truy cập địa chỉ: `http://127.0.0.1:5000`
 
-3. **Truy cập Dashboard**:
-   Mở trình duyệt và truy cập: [http://127.0.0.1:5000](http://127.0.0.1:5000)
-3. **Truy cập:**
-   Mở trình duyệt và truy cập vào: `http://127.0.0.1:5000`
+### Hướng dẫn thao tác (Lọc dữ liệu)
+- Ở cột bên trái, bạn có thể chọn **Nguồn phát thải** (VD: CO2 từ Dầu mỏ) và chọn **Khoảng thời gian**.
+- Tick chọn vào các quốc gia trong danh sách để so sánh. Web client sẽ tự động gửi request về server và cập nhật biểu đồ không cần tải lại trang.
 
-## 🌐 Truy cập công khai (Dùng Ngrok)
-Để share link đồ án cho người khác xem (giáo viên, bạn bè) mà không cần deploy lên server phức tạp:
-1. Tải **Ngrok** tại https://ngrok.com/
-2. Mở terminal mới, chạy lệnh:
-   ```bash
-   ngrok http 5000
-   ```
-3. Copy link có dạng `https://xxxx-xxx.ngrok-free.app` gửi cho giáo viên!
-
-## 📁 Cấu trúc thư mục
-- `api.py`: Backend Flask xử lý Data Pipeline và REST API.
-- `templates/index.html`: Frontend UI/UX, chứa logic JavaScript.
-- `owid-co2-data.csv`: Nguồn dữ liệu (Dataset gốc từ Our World in Data).
+### Hướng dẫn Push Code lên Git
+Mở terminal và gõ lần lượt các lệnh sau:
+```bash
+git init
+git add .
+git commit -m "Hoàn thiện Global GHG Dashboard"
+git branch -M main
+git remote add origin <link_github_repo_cua_ban>
+git push -u origin main
+```
