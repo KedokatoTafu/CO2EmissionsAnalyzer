@@ -23,6 +23,7 @@ CORS(app)
 BASE_DIR = Path(__file__).resolve().parent
 CSV_PATH = BASE_DIR / 'co2_data_cleaned.csv'
 
+global_error = None
 try:
     df = pd.read_csv(CSV_PATH)
     # Loại bỏ hoàn toàn 'World' khỏi dataframe
@@ -45,7 +46,8 @@ try:
             
 except Exception as e:
     print("LỖI ĐỌC CSV:", e)
-    raise
+    df = pd.DataFrame()
+    global_error = f"Lỗi: {str(e)} | Đường dẫn: {CSV_PATH}"
 
 def filter_dataframe(request_args):
     """Hàm hỗ trợ lọc dataframe chung dựa trên params"""
@@ -95,6 +97,14 @@ def filter_dataframe(request_args):
 # ==============================
 @app.route('/')
 def index():
+    if global_error:
+        import os
+        return jsonify({
+            "status": "CRASHED",
+            "error_message": global_error,
+            "cwd": os.getcwd(),
+            "files_in_dir": os.listdir(BASE_DIR)
+        }), 500
     return render_template('index.html')
 
 @app.route('/api/countries')
