@@ -72,13 +72,15 @@ Các thư viện Python và version được cài đặt sử dụng trong dự 
 - Ở cột bên trái, bạn có thể chọn **Nguồn phát thải** (VD: CO2 từ Dầu mỏ) và chọn **Khoảng thời gian**.
 - Tick chọn vào các quốc gia trong danh sách để so sánh. Web client sẽ tự động gửi request về server và cập nhật biểu đồ không cần tải lại trang.
 
-### Hướng dẫn Push Code lên Git
-Mở terminal và gõ lần lượt các lệnh sau:
+### Hướng dẫn Clone/Pull Code từ Git về máy
+Để tải dự án này về chạy thử, mở Terminal/Git Bash và chạy các lệnh sau:
 ```bash
-git init
-git add .
-git commit -m "Hoàn thiện Global GHG Dashboard"
-git branch -M main
-git remote add origin <link_github_repo_cua_ban>
-git push -u origin main
+# Tải toàn bộ source code về máy
+git clone <link_github_repo_cua_ban>
+
+# Di chuyển vào thư mục dự án
+cd <tên_thu_muc_du_an>
+
+# (Tùy chọn) Để cập nhật code mới nhất sau này, chạy lệnh:
+git pull origin main
 ```
