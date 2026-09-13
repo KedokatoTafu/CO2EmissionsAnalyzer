@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="vi" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global CO2 Dashboard</title>
+    <!-- Tailwind CSS cho UI/UX -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: "class" }</script>
+    <!-- Chart.js cho biểu đồ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Thư viện Plotly.js cho Bản đồ Thế giới -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Thư viện tải ảnh biểu đồ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Tùy chỉnh thanh cuộn cho danh sách chọn quốc gia */
+        #country-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #country-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-[#0b1121] text-gray-800 dark:text-gray-100 font-sans min-h-screen">
+
+    <!-- Header -->
+    <nav class="bg-white dark:bg-gray-800 dark:border-gray-700 shadow-sm border-b border-gray-100 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex-shrink-0 flex items-center gap-2">
+                    <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                    <span class="font-bold text-xl text-gray-800 dark:text-gray-100">Global GHG Dashboard</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="downloadCSV()"
+                        class="bg-blue-600 text-white px-4 py-2 rounded-md font-medium hover:bg-blue-700 transition flex items-center gap-2 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Tải CSV toàn bộ
+                    </button>
+                    <button onclick="toggleDarkMode()"
+                        class="ml-4 p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+                        <svg id="theme-icon" class="w-5 h-5 text-gray-600 dark:text-gray-300 dark:text-yellow-400"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header / Banner Giới thiệu -->
+    <div class="max-w-7xl mx-auto mb-6 bg-gradient-to-r from-blue-700 to-blue-900 rounded-xl shadow-lg p-6 text-white">
+        <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
+            🌍 Hệ thống Phân tích Khí thải Toàn cầu
+        </h1>
+        <p class="text-blue-100 text-sm md:text-base max-w-3xl">
+            Bảng điều khiển này giúp bạn theo dõi, phân tích và so sánh lượng khí nhà kính (CO2, Metan, N2O...) của các
+            quốc gia và châu lục qua các thời kỳ. Dữ liệu được trích xuất từ <b>Our World in Data</b> nhằm đánh giá tác
+            động đến biến đổi khí hậu toàn cầu.
+        </p>
+    </div>
+
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row gap-6">
+
+        <!-- Cột Bộ Lọc (Bên trái) -->
+        <div
+            class="w-full md:w-1/4 bg-white dark:bg-gray-800 dark:border-gray-700 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 h-fit sticky top-6">
+            <h2
+                class="text-lg font-bold text-gray-700 dark:text-gray-200 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
+                    </path>
+                </svg>
+                Bộ Lọc Dữ Liệu
+            </h2>
+
+            <!-- Lọc Nguồn phát thải -->
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Loại / Nguồn phát
+                    thải</label>
+                <select id="source-filter"
+                    class="w-full border-gray-300 dark:border-gray-600 border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                    <option value="co2">Tổng lượng CO2</option>
+                    <option value="coal_co2">CO2 từ Than (Coal)</option>
+                    <option value="oil_co2">CO2 từ Dầu (Oil)</option>
+                    <option value="cement_co2">CO2 từ Xi măng (Cement)</option>
+                    <option value="methane">Khí Metan (Methane)</option>
+                    <option value="nitrous_oxide">Khí N2O (Nitrous Oxide)</option>
+                    <option value="total_ghg">Tổng Khí nhà kính (GHG)</option>
+                    <option value="total_ghg_excluding_lucf">Tổng GHG (không tính sử dụng đất)</option>
+                    <option value="co2_including_luc">CO2 (Bao gồm thay đổi sử dụng đất)</option>
+                    <option value="land_use_change_co2">CO2 từ thay đổi sử dụng đất</option>
+                </select>
+            </div>
+
+            <!-- Lọc theo Năm -->
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Khoảng thời gian
+                    (Năm)</label>
+                <div class="flex gap-2">
+                    <input type="number" id="year-from" placeholder="VD: 2000"
+                        class="w-1/2 border-gray-300 dark:border-gray-600 border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                    <span class="text-gray-400 self-center">-</span>
+                    <input type="number" id="year-to" placeholder="VD: 2024"
+                        class="w-1/2 border-gray-300 dark:border-gray-600 border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <!-- Lọc theo Châu lục & Quốc gia -->
+            <div class="mb-5">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="block text-sm font-medium text-gray-600 dark:text-gray-300">Khu vực / Quốc gia</label>
+                    <button onclick="clearCountries()" class="text-xs text-blue-600 hover:underline">Xóa chọn</button>
+                </div>
+                <input type="text" id="search-country" placeholder="Tìm kiếm nhanh..."
+                    class="w-full border-gray-300 dark:border-gray-600 border rounded-md px-3 py-2 text-sm mb-2 focus:ring-blue-500 focus:border-blue-500">
+
+                <div
+                    class="border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-[#0b1121] flex flex-col h-56">
+                    <div class="flex border-b border-gray-200 dark:border-gray-700">
+                        <button id="tab-regions" onclick="switchTab('regions')"
+                            class="flex-1 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-200">Châu
+                            lục</button>
+                        <button id="tab-countries" onclick="switchTab('countries')"
+                            class="flex-1 py-2 text-xs font-semibold text-blue-600 border-b-2 border-blue-600">Quốc
+                            gia</button>
+                    </div>
+                    <div id="country-list" class="flex-1 overflow-y-auto p-2 space-y-1">
+                        <!-- Checkbox list đổ từ JS -->
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="fetchDashboardData()"
+                class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 shadow-md">
+                Áp dụng bộ lọc
+            </button>
+        </div>
+
+        <!-- Cột Nội dung (Bên phải) -->
+        <div class="w-full md:w-3/4 flex flex-col gap-6">
+
+            <!-- Trạng thái Loading / Error -->
+            <div id="alert-container" class="hidden">
+                <div id="alert-msg" class="p-4 rounded-lg flex items-center gap-3"></div>
+            </div>
+
+            <div class="flex gap-4 mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+                <button onclick="switchMainTab('analytics')" id="tab-main-analytics"
+                    class="text-lg font-bold text-blue-600 border-b-2 border-blue-600 pb-1">Tổng quan Phân tích</button>
+                <button onclick="switchMainTab('simulation')" id="tab-main-simulation"
+                    class="text-lg font-bold text-gray-500 dark:text-gray-400 hover:text-blue-500 pb-1">Mô phỏng Kịch
+                    bản (What-if)</button>
+            </div>
+
+            <div id="view-analytics" class="flex flex-col gap-6">
+
+                <!-- Bản đồ thế giới -->
+                <div
+                    class="bg-white dark:bg-gray-800 dark:border-gray-700 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-md font-semibold text-gray-700 dark:text-gray-200">Bản đồ Phát thải Toàn cầu
+                            (World Map)</h3>
+                        <span class="text-xs text-gray-400 font-normal">*Dựa trên khoảng thời gian đang chọn</span>
+                    </div>
+                    <div id="worldMap" class="w-full h-[400px]"></div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div
+                        class="bg-white dark:bg-gray-800 dark:border-gray-700 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+                        <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">Chỉ số tổng/TB</span>
+                        <span id="kpi-total" class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">--</span>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 dark:border-gray-700 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+                        <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">Quốc gia cao nhất</span>
+                        <span id="kpi-top-country"
+                            class="text-lg font-bold text-gray-800 dark:text-gray-100 mt-1 truncate">--</span>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 dark:border-gray-700 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+                        <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">Năm đạt đỉnh</span>
+                        <span id="kpi-top-year"
+                            class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">--</span>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 dark:border-gray-700 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+                        <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">Số khu vực/quốc gia</span>
+                        <span id="kpi-countries"
+                            class="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">--</span>
+                    </div>
+                </div>
+
+                <!-- Insight / Tóm tắt -->
+                <div id="auto-insights"
+                    class="bg-blue-50 text-blue-900 border border-blue-200 p-4 rounded-xl shadow-sm text-sm md:text-base leading-relaxed">
+                    <!-- Data đổ từ JS -->
+                </div>
+
+                <!-- Biểu đồ 1 & 2 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                    <!-- Chart 1: Line Chart -->
+                    <div class="bg-white dark:bg-gray-800 dark:border-gray-700 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative"
+                        id="chart-container-1">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-md font-semibold text-gray-700 dark:text-gray-200">Xu hướng theo thời gian
+                            </h3>
+                            <div class="flex items-center gap-3">
+                                <label
+                                    class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 cursor-pointer"
+                                    title="Sử dụng trục Logarit để dễ dàng so sánh các nước có lượng phát thải chênh lệch lớn">
+                                    <input type="checkbox" id="log-scale-toggle" onchange="toggleLogScale()"
+                                        class="rounded text-blue-600 focus:ring-blue-500">
+                                    Trục Logarit
+                                </label>
+                                <button onclick="downloadChart('lineChart', 'xuhuong')"
+                                    class="text-gray-400 hover:text-blue-600" title="Tải ảnh">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <canvas id="lineChart" height="250"></canvas>
+                    </div>
+
+                    <!-- Chart 2: Pie Chart -->
+                    <div class="bg-white dark:bg-gray-800 dark:border-gray-700 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative"
+                        id="chart-container-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-md font-semibold text-gray-700 dark:text-gray-200">Tỷ trọng đóng góp (Top 5)
+                            </h3>
+                            <button onclick="downloadChart('pieChart', 'tytrong_nguon')"
+                                class="text-gray-400 hover:text-blue-600" title="Tải ảnh">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <canvas id="pieChart" height="250"></canvas>
+                    </div>
+                </div>
+
+
+                <!-- Chart 3: Bar Chart -->
+                <div class="bg-white dark:bg-gray-800 dark:border-gray-700 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative"
+                    id="chart-container-3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-md font-semibold text-gray-700 dark:text-gray-200">Top 15 phát thải cao nhất
+                        </h3>
+                        <button onclick="downloadChart('barChart', 'top_phatthai')"
+                            class="text-gray-400 hover:text-blue-600" title="Tải ảnh">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <canvas id="barChart" height="100"></canvas>
+                </div>
+
+            </div> <!-- Đóng view-analytics -->
+
+            <!-- ======================= MÔ PHỎNG KỊCH BẢN ======================= -->
+            <div id="view-simulation" class="hidden flex flex-col gap-6">
+                <div
+                    class="bg-blue-50 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 p-4 rounded-xl shadow-sm text-sm border border-blue-200 dark:border-blue-800">
+                    💡 <b>Ý nghĩa Kịch bản:</b> Kéo các thanh trượt bên dưới để xem sự biến đổi lượng phát thải trong
+                    tương lai. Dữ liệu sẽ tự động tính toán từ tập hợp các quốc gia bạn đang chọn ở thanh bộ lọc. Mô
+                    hình "What-if" này giúp đánh giá trực quan tác động của dân số, kinh tế và môi trường.
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                        <label class="text-xs font-bold text-green-500 block mb-2">THAY ĐỔI SD ĐẤT: <span
+                                id="val-sim-luc">100%</span></label>
+                        <input type="range" id="sim-slider-luc" min="0" max="200" value="100"
+                            class="w-full cursor-pointer accent-green-500">
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                        <label class="text-xs font-bold text-red-500 block mb-2">TÁC ĐỘNG NHIỆT ĐỘ: <span
+                                id="val-sim-temp">100%</span></label>
+                        <input type="range" id="sim-slider-temp" min="0" max="200" value="100"
+                            class="w-full cursor-pointer accent-red-500">
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                        <label class="text-xs font-bold text-purple-500 block mb-2">TĂNG TRƯỞNG DÂN SỐ: <span
+                                id="val-sim-pop">100%</span></label>
+                        <input type="range" id="sim-slider-pop" min="0" max="200" value="100"
+                            class="w-full cursor-pointer accent-purple-500">
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+                        <label class="text-xs font-bold text-blue-500 block mb-2">TĂNG TRƯỞNG KINH TẾ: <span
+                                id="val-sim-gdp">100%</span></label>
+                        <input type="range" id="sim-slider-gdp" min="0" max="200" value="100"
+                            class="w-full cursor-pointer accent-blue-500">
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm"
+                    style="height: 400px;">
+                    <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">🌍 MÔ PHỎNG PHÁT THẢI KHÍ NHÀ
+                        KÍNH (MtCO₂e)</h3>
+                    <canvas id="simMainChart"></canvas>
+                </div>
+
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 h-32">
+                    <div
+                        class="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+                        <span class="text-[10px] font-bold text-green-500 z-10 relative">LAND USE CHANGE</span>
+                        <canvas id="sim-spark-luc"
+                            class="absolute bottom-0 left-0 w-full h-24 opacity-70 group-hover:opacity-100 transition"></canvas>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+                        <span class="text-[10px] font-bold text-red-500 z-10 relative">TEMPERATURE ANOMALY</span>
+                        <canvas id="sim-spark-temp"
+                            class="absolute bottom-0 left-0 w-full h-24 opacity-70 group-hover:opacity-100 transition"></canvas>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+                        <span class="text-[10px] font-bold text-purple-500 z-10 relative">POPULATION GROWTH</span>
+                        <canvas id="sim-spark-pop"
+                            class="absolute bottom-0 left-0 w-full h-24 opacity-70 group-hover:opacity-100 transition"></canvas>
+                    </div>
+                    <div
+                        class="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+                        <span class="text-[10px] font-bold text-blue-500 z-10 relative">ECONOMIC GROWTH</span>
+                        <canvas id="sim-spark-gdp"
+                            class="absolute bottom-0 left-0 w-full h-24 opacity-70 group-hover:opacity-100 transition"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- Đóng thẻ div Right Column -->
+
+        <!-- Script Xử lý Logic -->
+        <script>
+            const API_URL = 'http://127.0.0.1:5000';
+
+            let allCountries = [];
+            let allRegions = [];
+            let currentTab = 'countries'; // 'countries' or 'regions'
+
+            let lineChartInst = null;
+            let pieChartInst = null;
+            let barChartInst = null;
+
+            // Định dạng số đẹp
+            const fmt = (num) => new Intl.NumberFormat('en-US').format(num);
+
+
+            let isDarkMode = false;
+            function toggleDarkMode() {
+                isDarkMode = !isDarkMode;
+                if (isDarkMode) {
+                    document.documentElement.classList.add('dark');
+                    document.getElementById('theme-icon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>';
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.getElementById('theme-icon').innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
+                }
+                // Update charts colors
+                Chart.defaults.color = isDarkMode ? '#94a3b8' : '#64748b';
+                Chart.defaults.borderColor = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+                if (lineChartInst) lineChartInst.update();
+                if (barChartInst) barChartInst.update();
+                if (pieChartInst) pieChartInst.update();
+                if (simMainChartInst) simMainChartInst.update();
+            }
+
+            let currentMainTab = 'analytics';
+            function switchMainTab(tab) {
+                currentMainTab = tab;
+                if (tab === 'analytics') {
+                    document.getElementById('view-analytics').classList.remove('hidden');
+                    document.getElementById('view-simulation').classList.add('hidden');
+                    document.getElementById('tab-main-analytics').className = "text-lg font-bold text-blue-600 border-b-2 border-blue-600 pb-1";
+                    document.getElementById('tab-main-simulation').className = "text-lg font-bold text-gray-500 dark:text-gray-400 hover:text-blue-500 pb-1";
+                } else {
+                    document.getElementById('view-analytics').classList.add('hidden');
+                    document.getElementById('view-simulation').classList.remove('hidden');
+                    document.getElementById('tab-main-simulation').className = "text-lg font-bold text-blue-600 border-b-2 border-blue-600 pb-1";
+                    document.getElementById('tab-main-analytics').className = "text-lg font-bold text-gray-500 dark:text-gray-400 hover:text-blue-500 pb-1";
+                    fetchSimulationData();
+                }
+            }
+
+            let rawSimData = null;
+            let simMainChartInst = null;
+            const simColors = {
+                coal: { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.4)' },
+                oil: { border: '#10b981', bg: 'rgba(16, 185, 129, 0.4)' },
+                cement: { border: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.4)' },
+                methane: { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.4)' }
+            };
+
+            async function fetchSimulationData() {
+                const qs = buildQueryString();
+                try {
+                    const res = await fetch(`${API_URL}/api/simulation_data?${qs}`);
+                    rawSimData = await res.json();
+                    updateSimulation();
+                } catch (e) { console.error(e); }
+            }
+
+            function getSimMultipliers() {
+                return {
+                    luc: document.getElementById('sim-slider-luc').value / 100,
+                    temp: document.getElementById('sim-slider-temp').value / 100,
+                    pop: document.getElementById('sim-slider-pop').value / 100,
+                    gdp: document.getElementById('sim-slider-gdp').value / 100,
+                }
+            }
+
+            ['luc', 'temp', 'pop', 'gdp'].forEach(id => {
+                document.getElementById(`sim-slider-${id}`).addEventListener('input', (e) => {
+                    document.getElementById(`val-sim-${id}`).innerText = e.target.value + '%';
+                    updateSimulation();
+                });
+            });
+
+            function updateSimulation() {
+                if (!rawSimData || !rawSimData.labels) {
+                    if (simMainChartInst) { simMainChartInst.destroy(); simMainChartInst = null; }
+                    return;
+                }
+                const m = getSimMultipliers();
+
+                const simulated = {
+                    labels: rawSimData.labels,
+                    coal: rawSimData.coal.map(v => v * m.gdp),
+                    oil: rawSimData.oil.map(v => v * m.pop * m.gdp),
+                    cement: rawSimData.cement.map(v => v * m.pop),
+                    methane: rawSimData.methane.map(v => v * m.luc),
+                    luc: rawSimData.land_use.map(v => v * m.luc),
+                    temp: rawSimData.temperature.map(v => v * m.temp),
+                    pop: rawSimData.population.map(v => v * m.pop),
+                    gdp: rawSimData.gdp.map(v => v * m.gdp)
+                };
+
+                const ctx = document.getElementById('simMainChart').getContext('2d');
+                if (simMainChartInst) simMainChartInst.destroy();
+                simMainChartInst = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: simulated.labels,
+                        datasets: [
+                            { label: 'Coal (Than)', data: simulated.coal, borderColor: simColors.coal.border, backgroundColor: simColors.coal.bg, fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                            { label: 'Oil (Dầu)', data: simulated.oil, borderColor: simColors.oil.border, backgroundColor: simColors.oil.bg, fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                            { label: 'Cement (Xi măng)', data: simulated.cement, borderColor: simColors.cement.border, backgroundColor: simColors.cement.bg, fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 },
+                            { label: 'Methane (Metan)', data: simulated.methane, borderColor: simColors.methane.border, backgroundColor: simColors.methane.bg, fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { position: 'bottom' } },
+                        scales: { x: { grid: { display: false } }, y: { stacked: true, beginAtZero: true } }
+                    }
+                });
+
+                renderSparkline('sim-spark-luc', simulated.labels, simulated.luc, '#4ade80', 'rgba(74, 222, 128, 0.2)');
+                renderSparkline('sim-spark-temp', simulated.labels, simulated.temp, '#f87171', 'rgba(248, 113, 113, 0.2)');
+                renderSparkline('sim-spark-pop', simulated.labels, simulated.pop, '#c084fc', 'rgba(192, 132, 252, 0.2)');
+                renderSparkline('sim-spark-gdp', simulated.labels, simulated.gdp, '#60a5fa', 'rgba(96, 165, 250, 0.2)');
+            }
+
+            // Khởi tạo ban đầu
+            async function init() {
+                try {
+                    // Lấy list quốc gia và châu lục
+                    const res = await fetch(`${API_URL}/api/countries`);
+                    const data = await res.json();
+                    allCountries = data.countries;
+                    allRegions = data.regions;
+
+                    // Đặt mặc định year
+                    document.getElementById('year-from').value = 1990;
+                    document.getElementById('year-to').value = data.max_year;
+
+                    switchTab('countries');
+
+                    switchTab('countries');
+                    // Không chọn mặc định quốc gia nào để hiển thị full
+
+                    fetchDashboardData();
+                } catch (e) {
+                    showAlert("Không kết nối được server. Vui lòng kiểm tra Flask API.", "error");
+                }
+            }
+
+            function switchTab(tab) {
+                currentTab = tab;
+                const btnCountries = document.getElementById('tab-countries');
+                const btnRegions = document.getElementById('tab-regions');
+
+                if (tab === 'countries') {
+                    btnCountries.className = "flex-1 py-2 text-xs font-semibold text-blue-600 border-b-2 border-blue-600";
+                    btnRegions.className = "flex-1 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-200";
+                } else {
+                    btnRegions.className = "flex-1 py-2 text-xs font-semibold text-blue-600 border-b-2 border-blue-600";
+                    btnCountries.className = "flex-1 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:text-gray-200";
+                }
+
+                document.getElementById('search-country').value = '';
+                renderCountryList();
+            }
+
+            // Render list checkbox quốc gia + Tìm kiếm
+            function renderCountryList(filterText = '') {
+                const listEl = document.getElementById('country-list');
+                const listData = currentTab === 'countries' ? allCountries : allRegions;
+                const filtered = listData.filter(c => c.toLowerCase().includes(filterText.toLowerCase()));
+
+                // Giữ lại state các ô đang check
+                const checkedStates = getSelectedCountries();
+
+                listEl.innerHTML = filtered.map(c => `
+                <label class="flex items-center gap-2 px-2 py-1 hover:bg-gray-100 rounded cursor-pointer">
+                    <input type="checkbox" value="${c}" class="country-cb rounded text-blue-600 focus:ring-blue-500" ${checkedStates.includes(c) ? 'checked' : ''}>
+                    <span class="text-sm text-gray-700 dark:text-gray-200">${c}</span>
+                </label>
+            `).join('');
+            }
+
+            document.getElementById('search-country').addEventListener('input', (e) => {
+                renderCountryList(e.target.value);
+            });
+
+            function clearCountries() {
+                document.querySelectorAll('.country-cb').forEach(cb => cb.checked = false);
+            }
+
+            function getSelectedCountries() {
+                return Array.from(document.querySelectorAll('.country-cb:checked')).map(cb => cb.value);
+            }
+
+            function buildQueryString() {
+                const countries = getSelectedCountries().join(',');
+                const yFrom = document.getElementById('year-from').value;
+                const yTo = document.getElementById('year-to').value;
+                const source = document.getElementById('source-filter').value;
+
+                const params = new URLSearchParams();
+                if (countries) {
+                    params.append('countries', countries);
+                }
+                if (yFrom) params.append('from', yFrom);
+                if (yTo) params.append('to', yTo);
+                if (source) params.append('source', source);
+
+                return params.toString();
+            }
+
+            function showAlert(msg, type = "loading") {
+                const container = document.getElementById('alert-container');
+                const msgBox = document.getElementById('alert-msg');
+                container.classList.remove('hidden');
+
+                if (type === "loading") {
+                    msgBox.className = "p-4 rounded-lg flex items-center gap-3 bg-blue-50 text-blue-800 border border-blue-200";
+                    msgBox.innerHTML = `<div class="loader"></div> <span>${msg}</span>`;
+                } else if (type === "error") {
+                    msgBox.className = "p-4 rounded-lg flex items-center gap-3 bg-red-50 text-red-800 border border-red-200";
+                    msgBox.innerHTML = `<strong>Lỗi:</strong> <span>${msg}</span>`;
+                }
+            }
+
+            function hideAlert() {
+                document.getElementById('alert-container').classList.add('hidden');
+            }
+
+            // Tải toàn bộ Data Dashboard
+            async function fetchDashboardData() {
+                const qs = buildQueryString();
+                showAlert("Đang tải dữ liệu...", "loading");
+
+                try {
+                    // Tải song song 5 API
+                    const [statsRes, lineRes, barRes, pieRes, mapRes] = await Promise.all([
+                        fetch(`${API_URL}/api/stats?${qs}`),
+                        fetch(`${API_URL}/api/chart/line?${qs}`),
+                        fetch(`${API_URL}/api/chart/bar?${qs}`),
+                        fetch(`${API_URL}/api/chart/pie?${qs}`),
+                        fetch(`${API_URL}/api/chart/map?${qs}`)
+                    ]);
+
+                    if (!statsRes.ok) throw new Error("Không có dữ liệu cho bộ lọc này");
+
+                    const stats = await statsRes.json();
+                    const lineData = await lineRes.json();
+                    const barData = await barRes.json();
+                    const pieData = await pieRes.json();
+                    const mapData = await mapRes.json();
+
+                    // 1. Cập nhật KPIs
+                    document.getElementById('kpi-total').innerText = fmt(stats.main_val);
+                    document.getElementById('kpi-top-country').innerText = stats.quoc_gia_max;
+                    document.getElementById('kpi-top-country').title = stats.quoc_gia_max; // hover to see full name
+                    document.getElementById('kpi-top-year').innerText = stats.nam_max;
+                    document.getElementById('kpi-countries').innerText = stats.so_quoc_gia;
+
+                    // 2. Vẽ Bản đồ
+                    renderMapChart(mapData);
+
+                    // 3. Vẽ Biểu đồ Line
+                    renderLineChart(lineData);
+
+                    // 4. Vẽ Biểu đồ Bar
+                    renderBarChart(barData);
+
+                    // 5. Pie Chart
+                    renderPieChart(pieData);
+
+                    // 6. Insights
+
+
+                    generateInsights(lineData, stats);
+
+                    // Fetch Data cho Simulation (What-if)
+                    fetchSimulationData();
+
+                    hideAlert();
+                } catch (error) {
+                    console.error(error);
+                    // Clear charts on error
+                    if (lineChartInst) lineChartInst.destroy(); lineChartInst = null;
+                    if (barChartInst) barChartInst.destroy(); barChartInst = null;
+                    if (pieChartInst) pieChartInst.destroy(); pieChartInst = null;
+                    if (simMainChartInst) simMainChartInst.destroy(); simMainChartInst = null;
+                    document.getElementById('worldMap').innerHTML = '';
+
+                    document.getElementById('kpi-total').innerText = '--';
+                    document.getElementById('kpi-top-country').innerText = '--';
+                    document.getElementById('kpi-top-year').innerText = '--';
+                    document.getElementById('kpi-countries').innerText = '--';
+                    document.getElementById('auto-insights').innerHTML = 'Vui lòng nới lỏng bộ lọc hoặc chọn thêm quốc gia.';
+
+                    showAlert(error.message || "Không có dữ liệu cho bộ lọc này.", "error");
+                }
+            }
+
+            // --- Plotly.js Map ---
+            function renderMapChart(data) {
+                const mapData = [{
+                    type: 'choropleth',
+                    locations: data.iso_codes,
+                    z: data.co2,
+                    text: data.countries,
+                    colorscale: 'Reds', // Hoặc 'YlOrRd', 'Blues'
+                    autocolorscale: false,
+                    reversescale: false,
+                    marker: {
+                        line: { color: 'darkgray', width: 0.5 }
+                    },
+                    colorbar: {
+                        title: 'Triệu tấn CO2',
+                        thickness: 15
+                    }
+                }];
+
+                const layout = {
+                    margin: { l: 0, r: 0, t: 0, b: 0 },
+                    geo: {
+                        showframe: false,
+                        showcoastlines: true,
+                        projection: { type: 'equirectangular' }
+                    },
+                    dragmode: 'lasso' // Mặc định chế độ chọn bằng Lasso
+                };
+
+                const config = {
+                    responsive: true,
+                    displayModeBar: true,
+                    modeBarButtonsToRemove: ['autoScale2d', 'resetScale2d', 'hoverClosestGeo', 'hoverCompareCartesian'],
+                    displaylogo: false
+                };
+
+                Plotly.newPlot('worldMap', mapData, layout, config);
+
+                // Bắt sự kiện chọn vùng trên bản đồ (Lasso / Box Select)
+                document.getElementById('worldMap').on('plotly_selected', function (eventData) {
+                    if (!eventData) return;
+
+                    // Lấy danh sách tên quốc gia được quét chọn
+                    const selectedCountries = eventData.points.map(pt => pt.text);
+
+                    if (selectedCountries.length > 0) {
+                        switchTab('countries'); // Chuyển sang tab quốc gia
+                        clearCountries(); // Xóa chọn cũ
+
+                        // Tick chọn các quốc gia vừa quét trên bản đồ
+                        document.querySelectorAll('.country-cb').forEach(cb => {
+                            if (selectedCountries.includes(cb.value)) cb.checked = true;
+                        });
+
+                        // Gọi API cập nhật các biểu đồ khác
+                        fetchDashboardData();
+                    }
+                });
+
+                // Xóa chọn khi double click vào bản đồ
+                document.getElementById('worldMap').on('plotly_deselect', function () {
+                    clearCountries();
+                    fetchDashboardData();
+                });
+            }
+
+            // --- Hàm vẽ biểu đồ (Chart.js) ---
+            const colorPalette = [
+                '#2563eb', '#dc2626', '#16a34a', '#d97706', '#8b5cf6',
+                '#0ea5e9', '#ec4899', '#f43f5e', '#14b8a6', '#f59e0b', '#64748b'
+            ];
+
+            let isLogScale = false;
+            function toggleLogScale() {
+                isLogScale = document.getElementById('log-scale-toggle').checked;
+                if (lineChartInst) {
+                    lineChartInst.options.scales.y.type = isLogScale ? 'logarithmic' : 'linear';
+                    lineChartInst.update();
+                }
+            }
+
+            function generateInsights(lineData, stats) {
+                if (!lineData.datasets || lineData.datasets.length === 0) return;
+
+                let firstYearSum = 0;
+                let lastYearSum = 0;
+
+                lineData.datasets.forEach(ds => {
+                    if (ds.data.length > 0) {
+                        firstYearSum += ds.data[0];
+                        lastYearSum += ds.data[ds.data.length - 1];
+                    }
+                });
+
+                let diff = lastYearSum - firstYearSum;
+                let prct = firstYearSum ? (diff / firstYearSum * 100).toFixed(1) : 0;
+
+                let trendText = diff > 0
+                    ? `<span class="text-red-600 font-bold">tăng ${prct}%</span>`
+                    : `<span class="text-green-600 font-bold">giảm ${Math.abs(prct)}%</span>`;
+
+                let sourceName = document.getElementById('source-filter').options[document.getElementById('source-filter').selectedIndex].text;
+
+                document.getElementById('auto-insights').innerHTML = `
+                💡 <b>Phân tích nhanh:</b> Trong giai đoạn đang chọn, tổng lượng <b>${sourceName}</b> của các khu vực này đã ${trendText}. 
+                Quốc gia/khu vực dẫn đầu phát thải là <b>${stats.quoc_gia_max}</b>, đạt đỉnh vào năm <b>${stats.nam_max}</b>.
+            `;
+            }
+
+            let sparkInsts = {};
+            function renderSparkline(ctxId, labels, dataArr, colorStr, bgColorStr) {
+                const ctx = document.getElementById(ctxId).getContext('2d');
+                if (sparkInsts[ctxId]) sparkInsts[ctxId].destroy();
+
+                sparkInsts[ctxId] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: dataArr,
+                            borderColor: colorStr,
+                            backgroundColor: bgColorStr,
+                            borderWidth: 2,
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { enabled: true, mode: 'index', intersect: false } },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false }
+                        },
+                        interaction: { mode: 'index', intersect: false }
+                    }
+                });
+            }
+
+            function renderLineChart(data) {
+                const ctx = document.getElementById('lineChart').getContext('2d');
+                if (lineChartInst) lineChartInst.destroy();
+
+                const datasets = data.datasets.map((ds, index) => {
+                    let isOther = (ds.label === 'Các quốc gia khác' || ds.label === 'Khác');
+                    const color = isOther ? '#9ca3af' : colorPalette[index % colorPalette.length];
+
+                    return {
+                        label: ds.label,
+                        data: ds.data,
+                        borderColor: color,
+                        backgroundColor: color,
+                        borderWidth: 2,
+                        borderDash: isOther ? [5, 5] : [],
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }
+                });
+
+                lineChartInst = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+                        scales: {
+                            x: { grid: { display: false } },
+                            y: {
+                                type: isLogScale ? 'logarithmic' : 'linear',
+                                beginAtZero: true,
+                                stacked: false,
+                                grid: { color: '#f3f4f6' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function renderBarChart(data) {
+                const ctx = document.getElementById('barChart').getContext('2d');
+                if (barChartInst) barChartInst.destroy();
+
+                barChartInst = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Tổng phát thải (triệu tấn)',
+                            data: data.data,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            function renderPieChart(data) {
+                const ctx = document.getElementById('pieChart').getContext('2d');
+                if (pieChartInst) pieChartInst.destroy();
+
+                // Sinh màu cho biểu đồ tròn (Nếu là 'Khác' thì luôn cho màu xám)
+                const bgColors = data.labels.map((label, index) => {
+                    if (label === 'Khác' || label === 'Các quốc gia khác') return '#9ca3af'; // Màu xám cho Khác
+                    return colorPalette[index % colorPalette.length];
+                });
+
+                pieChartInst = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.data,
+                            backgroundColor: bgColors,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+
+            // --- Export tính năng ---
+            function downloadCSV() {
+                const qs = buildQueryString();
+                window.location.href = `${API_URL}/api/download-csv?${qs}`;
+            }
+
+            function downloadChart(canvasId, filename) {
+                const canvas = document.getElementById(canvasId);
+                const link = document.createElement('a');
+                link.download = filename + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+
+            // Bắt đầu
+            init();
+        </script>
+</body>
+
+</html>
