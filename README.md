@@ -12,28 +12,8 @@
 Sản phẩm được xây dựng theo mô hình **3-Tier Architecture (FE - BE - DB)**.
 
 ### Sơ đồ Hệ thống
-```mermaid
-flowchart LR
-    subgraph FE [Frontend - Giao diện]
-        UI[Web Dashboard\n(HTML, JS, Tailwind)]
-        Charts[Biểu đồ\n(Chart.js, Plotly)]
-    end
+<img width="1262" height="811" alt="image" src="https://github.com/user-attachments/assets/6d05be83-565d-4214-bece-5858ad317c9d" />
 
-    subgraph BE [Backend - Xử lý logic]
-        Server[Flask Server\n(api.py)]
-    end
-
-    subgraph DB [Database - Lưu trữ]
-        CSV[(Nguồn dữ liệu\nowid-co2-data.csv)]
-        Pandas[(In-memory DB\nPandas)]
-    end
-
-    CSV -->|Nạp & Làm sạch| Pandas
-    Pandas <-->|Truy vấn| Server
-    UI -- "Gửi HTTP GET" --> Server
-    Server -- "Trả về JSON" --> Charts
-    Charts -.-> UI
-```
 
 ### Chi tiết các cấu phần
 - **Web Client (FE):** Viết bằng ngôn ngữ **HTML, JavaScript**, và sử dụng framework CSS Tailwind.
@@ -76,11 +56,14 @@ Các thư viện Python và version được cài đặt sử dụng trong dự 
 Để tải dự án này về chạy thử, mở Terminal/Git Bash và chạy các lệnh sau:
 ```bash
 # Tải toàn bộ source code về máy
-git clone <link_github_repo_cua_ban>
-
-# Di chuyển vào thư mục dự án
-cd <tên_thu_muc_du_an>
-
-# (Tùy chọn) Để cập nhật code mới nhất sau này, chạy lệnh:
-git pull origin main
+git clone https://github.com/KedokatoTafu/CO2EmissionsAnalyzer.git
 ```
+5. Giao diện
+<img width="1623" height="912" alt="image" src="https://github.com/user-attachments/assets/cf358135-073a-4cd9-852b-79e0b5ed593c" />
+
+<img width="1638" height="861" alt="image" src="https://github.com/user-attachments/assets/35063983-b3be-4c58-87f5-401a5f42d057" />
+
+<img width="1636" height="867" alt="image" src="https://github.com/user-attachments/assets/68627143-b56b-4ece-8419-22a38f5d6ba9" />
+
+<img width="1667" height="921" alt="image" src="https://github.com/user-attachments/assets/2a26a06b-ade9-4532-b469-1a04d7d12886" />
+
