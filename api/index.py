@@ -4,23 +4,21 @@ import pandas as pd
 import io
 import sys
 from pathlib import Path
-
 try:
-    # Fix encoding cho Windows console (Chỉ áp dụng ở local)
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
 except AttributeError:
-    # Trên Vercel/AWS Lambda, sys.stdout không có hàm reconfigure
     pass
 
-app = Flask(__name__)
-app.json.nan_to_null = True  # NaN -> null trong JSON để không lỗi UI
+# Chỉ định rõ thư mục templates vì file app đang nằm trong thư mục con `api/`
+BASE_DIR = Path(__file__).resolve().parent.parent
+app = Flask(__name__, template_folder=str(BASE_DIR / 'templates'))
+app.json.nan_to_null = True
 CORS(app)
 
 # ==============================
 # 1. Đọc và chuẩn bị dữ liệu
 # ==============================
-BASE_DIR = Path(__file__).resolve().parent
 CSV_PATH = BASE_DIR / 'co2_data_cleaned.csv'
 
 global_error = None
