@@ -94,7 +94,7 @@ def index():
             "status": "CRASHED",
             "error_message": global_error,
             "cwd": os.getcwd(),
-            "files_in_dir": os.listdir(BASE_DIR)
+            "files_in_dir": os.listdir(os.getcwd())
         }), 500
     return render_template('index.html')
 
