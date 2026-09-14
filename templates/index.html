@@ -115,7 +115,7 @@
                 <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Loại / Nguồn phát
                     thải</label>
                 <select id="source-filter"
-                    class="w-full border-gray-300 dark:border-gray-600 border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                    class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
                     <option value="co2">Tổng lượng CO2</option>
                     <option value="coal_co2">CO2 từ Than (Coal)</option>
                     <option value="oil_co2">CO2 từ Dầu (Oil)</option>
@@ -135,10 +135,10 @@
                     (Năm)</label>
                 <div class="flex gap-2">
                     <input type="number" id="year-from" placeholder="VD: 2000"
-                        class="w-1/2 border-gray-300 dark:border-gray-600 border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                        class="w-1/2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
                     <span class="text-gray-400 self-center">-</span>
                     <input type="number" id="year-to" placeholder="VD: 2024"
-                        class="w-1/2 border-gray-300 dark:border-gray-600 border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
+                        class="w-1/2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white border rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500">
                 </div>
             </div>
 
@@ -149,7 +149,7 @@
                     <button onclick="clearCountries()" class="text-xs text-blue-600 hover:underline">Xóa chọn</button>
                 </div>
                 <input type="text" id="search-country" placeholder="Tìm kiếm nhanh..."
-                    class="w-full border-gray-300 dark:border-gray-600 border rounded-md px-3 py-2 text-sm mb-2 focus:ring-blue-500 focus:border-blue-500">
+                    class="w-full border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white border rounded-md px-3 py-2 text-sm mb-2 focus:ring-blue-500 focus:border-blue-500">
 
                 <div
                     class="border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-[#0b1121] flex flex-col h-56">
@@ -477,8 +477,6 @@
                     labels: rawSimData.labels,
                     coal: rawSimData.coal.map(v => v * m.gdp),
                     oil: rawSimData.oil.map(v => v * m.pop * m.gdp),
-                    coal: rawSimData.coal.map(v => v * m.gdp * m.temp),
-                    oil: rawSimData.oil.map(v => v * m.pop * m.gdp * m.temp),
                     cement: rawSimData.cement.map(v => v * m.pop),
                     methane: rawSimData.methane.map(v => v * m.luc),
                     luc: rawSimData.land_use.map(v => v * m.luc),
