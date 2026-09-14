@@ -6,7 +6,7 @@ env/
 .vscode/
 .idea/
 *.log
-co2_data_cleaned.csv  # Có thể loại trừ nếu file CSV quá lớn (tùy thuộc vào yêu cầu nộp bài)
+co2_data_cleaned.csv 
 
 
 .vercel

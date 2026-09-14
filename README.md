@@ -25,7 +25,7 @@ Sản phẩm được xây dựng theo mô hình **3-Tier Architecture (FE - BE 
     4. `/api/simulation_data`: Trả về dữ liệu đa chiều (GDP, Dân số, Nhiệt độ) để Web Client tính toán kịch bản mô phỏng tương lai.
 
 ## 3. Cấu trúc Code
-- `api.py`: File chứa toàn bộ logic Backend (Server), thiết lập các API endpoints và xử lý dữ liệu (Data Pipeline).
+- `api/index.py`: File chứa toàn bộ logic Backend (Server), thiết lập các API endpoints và xử lý dữ liệu (Data Pipeline).
 - `templates/index.html`: File Web Client (Frontend), chứa UI và các đoạn mã Javascript gửi HTTP request (fetch) tới Backend.
 
 ## 4. Thư viện & Requirements
