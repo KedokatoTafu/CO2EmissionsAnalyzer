@@ -45,7 +45,7 @@ Các thư viện Python và version được cài đặt sử dụng trong dự 
    ```
 3. Chạy file server Python:
    ```bash
-   python api.py
+   python index.py
    ```
 4. Mở trình duyệt web và truy cập địa chỉ: `http://127.0.0.1:5000` hoặc truy cập địa chỉ `https://co-2-emissions-analyzer.vercel.app`
 
