@@ -47,7 +47,7 @@ Các thư viện Python và version được cài đặt sử dụng trong dự 
    ```bash
    python index.py
    ```
-4. Mở trình duyệt web và truy cập địa chỉ: `http://127.0.0.1:5000` hoặc truy cập địa chỉ `https://co-2-emissions-analyzer.vercel.app`
+4. Mở trình duyệt web và truy cập địa chỉ: `http://127.0.0.1:5000`
 
 ### Hướng dẫn thao tác (Lọc dữ liệu)
 - Ở cột bên trái, bạn có thể chọn **Nguồn phát thải** (VD: CO2 từ Dầu mỏ) và chọn **Khoảng thời gian**.
