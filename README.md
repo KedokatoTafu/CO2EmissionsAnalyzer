@@ -59,7 +59,7 @@ Các thư viện Python và version được cài đặt sử dụng trong dự 
 # Tải toàn bộ source code về máy
 git clone https://github.com/KedokatoTafu/CO2EmissionsAnalyzer.git
 ```
-5. Giao diện
+## 6. Giao diện
 <img width="1623" height="912" alt="image" src="https://github.com/user-attachments/assets/cf358135-073a-4cd9-852b-79e0b5ed593c" />
 
 <img width="1638" height="861" alt="image" src="https://github.com/user-attachments/assets/35063983-b3be-4c58-87f5-401a5f42d057" />
