@@ -3,7 +3,6 @@ from flask_cors import CORS
 import pandas as pd
 import io
 import sys
-from pathlib import Path
 try:
     sys.stdout.reconfigure(encoding='utf-8')
     sys.stderr.reconfigure(encoding='utf-8')
@@ -11,20 +10,16 @@ except AttributeError:
     pass
 
 # Chỉ định rõ thư mục templates vì file app đang nằm trong thư mục con `api/`
-BASE_DIR = Path(__file__).resolve().parent.parent
-app = Flask(__name__, template_folder=str(BASE_DIR / 'templates'))
+app = Flask(__name__, template_folder='../templates')
 app.json.nan_to_null = True
 CORS(app)
 
-# ==============================
 # 1. Đọc và chuẩn bị dữ liệu
-# ==============================
-CSV_PATH = BASE_DIR / 'co2_data_cleaned.csv'
+CSV_PATH = 'co2_data_cleaned.csv'
 
 global_error = None
 try:
     df = pd.read_csv(CSV_PATH)
-    # Loại bỏ hoàn toàn 'World' khỏi dataframe
     df = df[df['country'] != 'World']
     
     # Đảm bảo kiểu dữ liệu cho năm
@@ -90,9 +85,7 @@ def filter_dataframe(request_args):
             
     return du_lieu
 
-# ==============================
 # 2. Các Endpoints API
-# ==============================
 @app.route('/')
 def index():
     if global_error:
