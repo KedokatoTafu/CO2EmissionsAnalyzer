@@ -30,6 +30,7 @@ Sản phẩm được xây dựng theo mô hình **3-Tier Architecture (FE - BE 
 
 ## 4. Thư viện & Requirements
 Các thư viện Python và version được cài đặt sử dụng trong dự án:
+- `Python==3.9.13`
 - `Flask==3.0.3` (Dựng Web Server)
 - `pandas==2.2.1` (Xử lý và làm sạch dữ liệu)
 - `flask-cors==4.0.0` (Xử lý chính sách bảo mật chia sẻ tài nguyên)
