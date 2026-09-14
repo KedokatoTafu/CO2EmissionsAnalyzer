@@ -1,4 +1,4 @@
-# 🌍 Global GHG Emissions Dashboard
+# 🌍 CO2 Emissions Analyzer
 
 ## 1. Tổng quan về Data
 - **Nguồn dữ liệu:** Bộ dữ liệu phát thải khí nhà kính toàn cầu (`owid-co2-data.csv`).
