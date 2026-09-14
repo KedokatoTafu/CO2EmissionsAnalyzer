@@ -475,8 +475,8 @@
 
                 const simulated = {
                     labels: rawSimData.labels,
-                    coal: rawSimData.coal.map(v => v * m.gdp),
-                    oil: rawSimData.oil.map(v => v * m.pop * m.gdp),
+                    coal: rawSimData.coal.map(v => v * m.gdp * m.temp),
+                    oil: rawSimData.oil.map(v => v * m.pop * m.gdp * m.temp),
                     cement: rawSimData.cement.map(v => v * m.pop),
                     methane: rawSimData.methane.map(v => v * m.luc),
                     luc: rawSimData.land_use.map(v => v * m.luc),
